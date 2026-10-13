@@ -1,0 +1,1421 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alphabet Adventure and Halloween Maze</title>
+
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #171022;
+    color: white;
+    text-align: center;
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    height: 100dvh;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 { margin: 3px 0 8px; }
+
+button {
+    cursor: pointer;
+    border: 2px solid #ff9d00;
+    border-radius: 9px;
+    background: #49276e;
+    color: white;
+    padding: 9px 15px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+button:hover { background: #70419c; }
+
+/* ALPHABET GAME */
+
+#alphabetScreen {
+    background: radial-gradient(circle at top, #49305e, #171022 75%);
+}
+
+#alphabetScreen h1 {
+    font-size: clamp(22px, 3vw, 34px);
+}
+
+#alphabetInstructions {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+#alphabetBoard {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: 5px;
+    width: min(100%, 1000px);
+    margin: 0 auto;
+}
+
+.letter-slot {
+    aspect-ratio: 1 / 1;
+    max-height: 52px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #aaa;
+    border-radius: 6px;
+    background: rgba(255,255,255,.08);
+    color: white;
+    font-size: clamp(12px, 2vw, 21px);
+    font-weight: bold;
+}
+
+.letter-slot.filled {
+    border-style: solid;
+    color: #111;
+}
+
+.letter-options {
+    width: min(100%, 1000px);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin: 12px auto 5px;
+}
+
+.letter-card {
+    width: clamp(30px, 5vw, 48px);
+    height: clamp(30px, 5vw, 48px);
+    border: 2px solid rgba(255,255,255,.8);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(13px, 2vw, 21px);
+    font-weight: bold;
+    color: black;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.rainbow-red { background: #ff6464; }
+.rainbow-orange { background: #ffad52; }
+.rainbow-yellow { background: #ffe66b; }
+.rainbow-green { background: #79e879; }
+.rainbow-blue { background: #75caff; }
+.rainbow-purple { background: #d0a0ff; }
+
+.rainbow-red-bright { background: #ff2020; }
+.rainbow-orange-bright { background: #ff7900; }
+.rainbow-yellow-bright { background: #fff000; }
+.rainbow-green-bright { background: #20ff28; }
+.rainbow-blue-bright { background: #00bfff; }
+.rainbow-purple-bright { background: #bd55ff; }
+
+#alphabetMessage {
+    min-height: 32px;
+    margin: 5px 0;
+    font-size: clamp(16px, 2vw, 23px);
+    font-weight: bold;
+    color: #ffe36e;
+}
+
+#alphabetBottom {
+    width: 100%;
+    margin-top: auto;
+    padding-bottom: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#completionCount {
+    font-size: 14px;
+    color: white;
+}
+
+#escapeButton {
+    display: none;
+    background: #d96b00;
+    border-color: #ffe36e;
+    font-size: 16px;
+}
+
+#alphabetTestBox {
+    position: fixed;
+    left: 5px;
+    bottom: 5px;
+    width: 85px;
+    height: 22px;
+    padding: 2px 4px;
+    background: rgba(0,0,0,.3);
+    color: rgba(255,255,255,.5);
+    border: 1px solid rgba(255,255,255,.25);
+    font-size: 11px;
+    z-index: 100;
+}
+
+/* MAZE SCREEN */
+
+#mazeScreen {
+    background: radial-gradient(ellipse at top, #39234e, #110b19 80%);
+    padding: 3px 8px 5px;
+    position: relative;
+}
+
+.maze-title {
+    flex: 0 0 auto;
+    margin: 2px 0 3px;
+    font-size: clamp(20px, 2.5vw, 30px);
+    color: #ffb52e;
+    text-shadow: 0 0 9px #f60;
+}
+
+#mazeInfo {
+    flex: 0 0 auto;
+    font-size: clamp(12px, 1.5vw, 16px);
+    min-height: 20px;
+    margin-bottom: 2px;
+}
+
+#mazeStatus {
+    flex: 0 0 auto;
+    min-height: 20px;
+    color: #ffe36e;
+    font-size: clamp(12px, 1.4vw, 15px);
+    margin-bottom: 3px;
+}
+
+.maze-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 10px;
+}
+
+#levelPanel {
+    flex: 0 0 clamp(90px, 13vw, 155px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border: 2px solid #ff9d00;
+    border-radius: 12px;
+    background: rgba(0,0,0,.4);
+    align-self: center;
+}
+
+#levelPanelLabel {
+    font-size: clamp(12px, 1.5vw, 17px);
+    color: #ffcf70;
+    font-weight: bold;
+}
+
+#levelNumber {
+    font-size: clamp(30px, 5vw, 54px);
+    line-height: 1;
+    color: #ffe36e;
+    font-weight: bold;
+    text-shadow: 0 0 12px #ff7900;
+}
+
+#levelOf {
+    font-size: clamp(11px, 1.4vw, 15px);
+}
+
+#challengePanel {
+    font-size: clamp(10px, 1.2vw, 13px);
+    line-height: 1.4;
+    color: #fff;
+}
+
+#challengeProgress {
+    font-size: clamp(12px, 1.4vw, 15px);
+    color: #8effa2;
+    font-weight: bold;
+}
+
+.maze-area {
+    position: relative;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#mazeCanvas {
+    display: block;
+    width: min(100%, 88vh);
+    height: 100%;
+    max-height: 100%;
+    aspect-ratio: 1 / 1;
+    background: #30233a;
+    border: 3px solid #ff9d00;
+    box-shadow: 0 0 18px rgba(255,120,0,.45);
+    image-rendering: pixelated;
+}
+
+#mazeFinish {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(15,8,22,.93);
+    z-index: 5;
+    padding: 10px;
+}
+
+#mazeFinish h2 {
+    color: #ffe36e;
+    font-size: clamp(23px, 4vw, 43px);
+    margin: 0;
+    text-shadow: 0 0 15px #ff7900;
+}
+
+#mazeFinish p {
+    font-size: clamp(13px, 1.8vw, 18px);
+    margin: 0;
+}
+
+#mazeFinishButton {
+    background: #d96b00;
+    font-size: 15px;
+}
+
+#backButton {
+    flex: 0 0 auto;
+    display: block;
+    margin: 4px auto 0;
+    background: rgba(0,0,0,.65);
+    color: white;
+    border: 2px solid #ff9d00;
+    padding: 6px 14px;
+    font-size: 14px;
+}
+
+#mazeTestBox {
+    position: fixed;
+    left: 5px;
+    bottom: 5px;
+    width: 75px;
+    height: 22px;
+    border: 1px solid rgba(255,255,255,.3);
+    background: rgba(0,0,0,.35);
+    color: rgba(255,255,255,.45);
+    font-size: 11px;
+    padding: 2px 4px;
+    outline: none;
+    border-radius: 3px;
+    z-index: 100;
+}
+
+#confettiCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 200;
+}
+
+@media (max-width: 600px) {
+    #alphabetBoard { gap: 2px; }
+
+    .letter-slot {
+        border-width: 1px;
+        border-radius: 3px;
+    }
+
+    .maze-layout { gap: 4px; }
+
+    #levelPanel {
+        flex-basis: 76px;
+        padding: 4px;
+        gap: 6px;
+    }
+
+    #challengePanel { font-size: 9px; }
+
+    #mazeCanvas { width: 100%; }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<div id="alphabetScreen" class="screen active">
+    <h1>🎃 Alphabet Adventure 👻</h1>
+
+    <div id="alphabetInstructions">
+        Drag each letter into its correct place from A to Z!
+    </div>
+
+    <div id="alphabetBoard"></div>
+    <div id="letterOptions" class="letter-options"></div>
+    <div id="alphabetMessage"></div>
+
+    <div id="alphabetBottom">
+        <div id="completionCount">Times Completed: 0</div>
+
+        <button id="playAgainButton" style="display:none">
+            Play Again
+        </button>
+
+        <button id="escapeButton">
+            🎃 Can You Escape? 👻
+        </button>
+    </div>
+
+    <input id="alphabetTestBox" type="text"
+           autocomplete="off" spellcheck="false"
+           aria-label="Alphabet testing box">
+</div>
+
+<div id="mazeScreen" class="screen">
+    <h1 class="maze-title">🎃 Halloween Escape Maze 👻</h1>
+
+    <div id="mazeInfo">Use the arrow keys to move!</div>
+    <div id="mazeStatus">Find your way through the maze!</div>
+
+    <div class="maze-layout">
+
+        <div id="levelPanel">
+            <div id="levelPanelLabel">CURRENT LEVEL</div>
+            <div id="levelNumber">1</div>
+            <div id="levelOf">of 20</div>
+            <div id="challengePanel">Find the exit!</div>
+            <div id="challengeProgress"></div>
+        </div>
+
+        <div class="maze-area">
+            <canvas id="mazeCanvas"></canvas>
+
+            <div id="mazeFinish">
+                <h2 id="finishTitle">🎉 YOU ESCAPED! 🎉</h2>
+                <p id="finishMessage">Great job!</p>
+                <button id="mazeFinishButton">Continue</button>
+            </div>
+        </div>
+
+    </div>
+
+    <button id="backButton">← Return to Alphabet</button>
+
+    <input id="mazeTestBox" type="text"
+           autocomplete="off" spellcheck="false"
+           aria-label="Maze level testing box">
+</div>
+
+<script>
+const alphabetScreen = document.getElementById("alphabetScreen");
+const mazeScreen = document.getElementById("mazeScreen");
+
+const alphabetBoard = document.getElementById("alphabetBoard");
+const letterOptions = document.getElementById("letterOptions");
+const alphabetMessage = document.getElementById("alphabetMessage");
+const completionCount = document.getElementById("completionCount");
+const playAgainButton = document.getElementById("playAgainButton");
+const escapeButton = document.getElementById("escapeButton");
+
+const mazeCanvas = document.getElementById("mazeCanvas");
+const mazeContext = mazeCanvas.getContext("2d");
+const mazeInfo = document.getElementById("mazeInfo");
+const mazeStatus = document.getElementById("mazeStatus");
+const mazeFinish = document.getElementById("mazeFinish");
+const finishTitle = document.getElementById("finishTitle");
+const finishMessage = document.getElementById("finishMessage");
+const mazeFinishButton = document.getElementById("mazeFinishButton");
+
+const levelNumber = document.getElementById("levelNumber");
+const challengePanel = document.getElementById("challengePanel");
+const challengeProgress = document.getElementById("challengeProgress");
+
+const confettiCanvas = document.getElementById("confettiCanvas");
+const confettiContext = confettiCanvas.getContext("2d");
+
+/* ALPHABET GAME */
+
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+const rainbowClasses = [
+    "rainbow-red", "rainbow-orange", "rainbow-yellow",
+    "rainbow-green", "rainbow-blue", "rainbow-purple"
+];
+
+const brightRainbowClasses = [
+    "rainbow-red-bright", "rainbow-orange-bright",
+    "rainbow-yellow-bright", "rainbow-green-bright",
+    "rainbow-blue-bright", "rainbow-purple-bright"
+];
+
+let placedLetters = 0;
+let timesCompleted = 0;
+let draggedLetter = null;
+let alphabetFinished = false;
+
+function shuffle(array) {
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+}
+
+function createAlphabetBoard() {
+    alphabetBoard.innerHTML = "";
+    letterOptions.innerHTML = "";
+
+    placedLetters = 0;
+    alphabetFinished = false;
+    draggedLetter = null;
+
+    alphabetMessage.textContent = "";
+    playAgainButton.style.display = "none";
+
+    letters.forEach(letter => {
+        const slot = document.createElement("div");
+        slot.className = "letter-slot";
+        slot.dataset.letter = letter;
+
+        slot.addEventListener("dragover", event => event.preventDefault());
+
+        slot.addEventListener("drop", event => {
+            event.preventDefault();
+            const transferred = event.dataTransfer.getData("text/plain");
+            placeLetter(slot, transferred || draggedLetter);
+        });
+
+        alphabetBoard.appendChild(slot);
+    });
+
+    shuffle(letters).forEach((letter, index) => {
+        const card = document.createElement("div");
+
+        card.className =
+            "letter-card " +
+            rainbowClasses[index % rainbowClasses.length];
+
+        card.textContent = letter;
+        card.dataset.letter = letter;
+        card.draggable = true;
+
+        card.addEventListener("dragstart", event => {
+            draggedLetter = letter;
+            event.dataTransfer.setData("text/plain", letter);
+        });
+
+        card.addEventListener("dragend", () => {
+            draggedLetter = null;
+        });
+
+        letterOptions.appendChild(card);
+    });
+}
+
+function placeLetter(slot, letter) {
+    if (!letter || alphabetFinished) return;
+    if (slot.classList.contains("filled")) return;
+
+    if (slot.dataset.letter === letter) {
+        const index = letters.indexOf(letter);
+
+        slot.textContent = letter;
+        slot.classList.add("filled");
+        slot.classList.add(
+            brightRainbowClasses[index % brightRainbowClasses.length]
+        );
+
+        const card = document.querySelector(
+            '.letter-card[data-letter="' + letter + '"]'
+        );
+
+        if (card) card.remove();
+
+        placedLetters++;
+        draggedLetter = null;
+
+        if (placedLetters === 26) alphabetCompleted();
+    } else {
+        alphabetMessage.textContent = "Try that letter again!";
+    }
+}
+
+function alphabetCompleted() {
+    alphabetFinished = true;
+    timesCompleted++;
+
+    completionCount.textContent = "Times Completed: " + timesCompleted;
+    alphabetMessage.textContent = "🎉 You Completed The Alphabet! 🎉";
+    playAgainButton.style.display = "inline-block";
+
+    launchConfetti();
+
+    if (timesCompleted >= 3) {
+        escapeButton.style.display = "inline-block";
+    }
+}
+
+playAgainButton.addEventListener("click", createAlphabetBoard);
+escapeButton.addEventListener("click", openMaze);
+
+document.getElementById("alphabetTestBox").addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+
+    const command = event.target.value.trim().toLowerCase();
+
+    if (command === "halloween") {
+        timesCompleted = 3;
+        completionCount.textContent = "Times Completed: 3";
+        escapeButton.style.display = "inline-block";
+    }
+
+    const match = command.match(/^maze(20|1[0-9]|[1-9])$/);
+
+    if (match) {
+        openMaze();
+        startMazeLevel(Number(match[1]));
+    }
+
+    event.target.value = "";
+});
+
+/* MAZE VARIABLES */
+
+let currentLevel = 1;
+let mazeSize = 9;
+let maze = [];
+let player = { x: 1, y: 1 };
+let exit = { x: 0, y: 0 };
+let mazeComplete = false;
+
+let skeletonKey = { x: 0, y: 0, collected: false };
+let gate = { x: 0, y: 0, open: false };
+
+let pumpkins = [];
+let pumpkinsCollected = 0;
+let pumpkinsNeeded = 0;
+let timerSeconds = 0;
+let timerInterval = null;
+
+function getMazeSize(level) {
+    if (level <= 4) return 9 + ((level - 1) * 2);
+    return 21 + ((level - 5) * 2);
+}
+
+function needsKeyAndGate(level) {
+    return level === 10 || level === 19 || level === 20;
+}
+
+function getPumpkinTarget(level) {
+    if (level === 15) return 3;
+    if (level === 16) return 5;
+    if (level === 17) return 4;
+    if (level === 18) return 6;
+    if (level === 19) return 6;
+    if (level === 20) return 8;
+    return 0;
+}
+
+function getTimeLimit(level) {
+    if (level === 17) return 90;
+    if (level === 18) return 75;
+    if (level === 19) return 90;
+    if (level === 20) return 90;
+    return 0;
+}
+
+function getChallengeText(level) {
+    if (level === 15) return "Collect 3 pumpkins 🎃";
+    if (level === 16) return "Collect 5 pumpkins 🎃";
+    if (level === 17) return "Collect 4 pumpkins + timer!";
+    if (level === 18) return "Collect 6 pumpkins + timer!";
+    if (level === 19) return "6 pumpkins + key + gate!";
+    if (level === 20) return "8 pumpkins + key + gate!";
+    if (level === 10) return "Find the key 🔑 and unlock the door!";
+    return "Find the exit!";
+}
+
+function openMaze() {
+    alphabetScreen.classList.remove("active");
+    mazeScreen.classList.add("active");
+    startMazeLevel(currentLevel);
+}
+
+function startMazeLevel(level) {
+    stopTimer();
+
+    currentLevel = Math.max(1, Math.min(20, level));
+    mazeSize = getMazeSize(currentLevel);
+    mazeComplete = false;
+
+    player = { x: 1, y: 1 };
+    skeletonKey = { x: 0, y: 0, collected: false };
+    gate = { x: 0, y: 0, open: false };
+
+    pumpkins = [];
+    pumpkinsCollected = 0;
+    pumpkinsNeeded = getPumpkinTarget(currentLevel);
+    timerSeconds = getTimeLimit(currentLevel);
+
+    mazeFinish.style.display = "none";
+    levelNumber.textContent = currentLevel;
+    challengePanel.textContent = getChallengeText(currentLevel);
+
+    mazeInfo.textContent = "Use the arrow keys to move!";
+    mazeStatus.textContent = "Find your way through the maze!";
+
+    generateMaze();
+
+    if (needsKeyAndGate(currentLevel)) setupKeyAndGate();
+    if (pumpkinsNeeded > 0) placePumpkins();
+
+    updateChallengeProgress();
+    resizeMazeCanvas();
+
+    if (timerSeconds > 0) startTimer();
+}
+
+/* MAZE GENERATION */
+
+function generateMaze() {
+    maze = Array.from({ length: mazeSize }, () => Array(mazeSize).fill(1));
+
+    const stack = [{ x: 1, y: 1 }];
+    maze[1][1] = 0;
+
+    const directions = [[0,-2],[2,0],[0,2],[-2,0]];
+
+    while (stack.length > 0) {
+        const current = stack[stack.length - 1];
+
+        const choices = shuffle(directions).filter(([dx, dy]) => {
+            const nx = current.x + dx;
+            const ny = current.y + dy;
+
+            return nx > 0 && nx < mazeSize - 1 &&
+                   ny > 0 && ny < mazeSize - 1 &&
+                   maze[ny][nx] === 1;
+        });
+
+        if (choices.length === 0) {
+            stack.pop();
+            continue;
+        }
+
+        const [dx, dy] = choices[0];
+        const nx = current.x + dx;
+        const ny = current.y + dy;
+
+        maze[current.y + dy / 2][current.x + dx / 2] = 0;
+        maze[ny][nx] = 0;
+
+        stack.push({ x: nx, y: ny });
+    }
+
+    if (currentLevel >= 5) addExtraMazeRoutes();
+
+    const distances = findDistancesFromStart();
+    let farthest = { x: 1, y: 1, distance: 0 };
+
+    for (let y = 1; y < mazeSize - 1; y++) {
+        for (let x = 1; x < mazeSize - 1; x++) {
+            if (distances[y][x] > farthest.distance) {
+                farthest = { x, y, distance: distances[y][x] };
+            }
+        }
+    }
+
+    exit = { x: farthest.x, y: farthest.y };
+}
+
+function addExtraMazeRoutes() {
+    const openings = Math.min(Math.floor(currentLevel * 0.7), 12);
+    let added = 0;
+    let attempts = 0;
+
+    while (added < openings && attempts < openings * 80) {
+        attempts++;
+
+        const x = 1 + Math.floor(Math.random() * (mazeSize - 2));
+        const y = 1 + Math.floor(Math.random() * (mazeSize - 2));
+
+        if (maze[y][x] !== 1) continue;
+
+        let neighbors = 0;
+
+        if (maze[y - 1][x] === 0) neighbors++;
+        if (maze[y + 1][x] === 0) neighbors++;
+        if (maze[y][x - 1] === 0) neighbors++;
+        if (maze[y][x + 1] === 0) neighbors++;
+
+        if (neighbors === 2) {
+            maze[y][x] = 0;
+            added++;
+        }
+    }
+}
+
+function findDistancesFromStart() {
+    const distances = Array.from(
+        { length: mazeSize },
+        () => Array(mazeSize).fill(-1)
+    );
+
+    const queue = [{ x: 1, y: 1 }];
+    distances[1][1] = 0;
+
+    const directions = [[0,-1],[1,0],[0,1],[-1,0]];
+    let head = 0;
+
+    while (head < queue.length) {
+        const current = queue[head++];
+
+        for (const [dx, dy] of directions) {
+            const nx = current.x + dx;
+            const ny = current.y + dy;
+
+            if (nx < 0 || nx >= mazeSize || ny < 0 || ny >= mazeSize) {
+                continue;
+            }
+
+            if (maze[ny][nx] !== 0 || distances[ny][nx] !== -1) {
+                continue;
+            }
+
+            distances[ny][nx] = distances[current.y][current.x] + 1;
+            queue.push({ x: nx, y: ny });
+        }
+    }
+
+    return distances;
+}
+
+/* KEY AND GATE */
+
+function findSolutionPath() {
+    const queue = [{
+        x: 1,
+        y: 1,
+        path: [{ x: 1, y: 1 }]
+    }];
+
+    const visited = new Set(["1,1"]);
+    const directions = [[0,-1],[1,0],[0,1],[-1,0]];
+    let head = 0;
+
+    while (head < queue.length) {
+        const current = queue[head++];
+
+        if (current.x === exit.x && current.y === exit.y) {
+            return current.path;
+        }
+
+        for (const [dx, dy] of directions) {
+            const nx = current.x + dx;
+            const ny = current.y + dy;
+            const key = nx + "," + ny;
+
+            if (nx < 0 || nx >= mazeSize || ny < 0 || ny >= mazeSize) {
+                continue;
+            }
+
+            if (maze[ny][nx] !== 0 || visited.has(key)) continue;
+
+            visited.add(key);
+
+            queue.push({
+                x: nx,
+                y: ny,
+                path: [...current.path, { x: nx, y: ny }]
+            });
+        }
+    }
+
+    return [];
+}
+
+function setupKeyAndGate() {
+    const path = findSolutionPath();
+    if (path.length < 5) return;
+
+    const keyIndex = Math.max(2, Math.floor(path.length * 0.35));
+    const gateIndex = Math.min(path.length - 2, Math.floor(path.length * 0.75));
+
+    const keyCell = path[keyIndex];
+    const gateCell = path[gateIndex];
+
+    skeletonKey = {
+        x: keyCell.x,
+        y: keyCell.y,
+        collected: false
+    };
+
+    gate = {
+        x: gateCell.x,
+        y: gateCell.y,
+        open: false
+    };
+}
+
+/* PUMPKINS */
+
+function placePumpkins() {
+    const path = findSolutionPath();
+
+    const candidates = path.filter(cell => {
+        if (cell.x === 1 && cell.y === 1) return false;
+        if (cell.x === exit.x && cell.y === exit.y) return false;
+
+        if (
+            needsKeyAndGate(currentLevel) &&
+            cell.x === skeletonKey.x &&
+            cell.y === skeletonKey.y
+        ) return false;
+
+        if (
+            needsKeyAndGate(currentLevel) &&
+            cell.x === gate.x &&
+            cell.y === gate.y
+        ) return false;
+
+        return true;
+    });
+
+    pumpkins = shuffle(candidates)
+        .slice(0, Math.min(pumpkinsNeeded, candidates.length))
+        .map(cell => ({
+            x: cell.x,
+            y: cell.y,
+            collected: false
+        }));
+}
+
+function collectPumpkinAt(x, y) {
+    const pumpkin = pumpkins.find(item =>
+        item.x === x && item.y === y && !item.collected
+    );
+
+    if (!pumpkin) return;
+
+    pumpkin.collected = true;
+    pumpkinsCollected++;
+
+    mazeStatus.textContent = "🎃 Pumpkin collected!";
+    updateChallengeProgress();
+}
+
+function updateChallengeProgress() {
+    challengeProgress.textContent = pumpkinsNeeded > 0
+        ? "🎃 " + pumpkinsCollected + "/" + pumpkinsNeeded
+        : "";
+
+    if (timerSeconds > 0) {
+        mazeInfo.textContent = "⏱️ Time left: " + timerSeconds + " seconds";
+    } else if (getTimeLimit(currentLevel) > 0) {
+        mazeInfo.textContent = "⏱️ Timer: 0 seconds";
+    } else {
+        mazeInfo.textContent = "Use the arrow keys to move!";
+    }
+}
+
+/* TIMER */
+
+function startTimer() {
+    stopTimer();
+    updateChallengeProgress();
+
+    timerInterval = setInterval(() => {
+        if (mazeComplete) {
+            stopTimer();
+            return;
+        }
+
+        timerSeconds--;
+        updateChallengeProgress();
+
+        if (timerSeconds <= 0) {
+            stopTimer();
+            timeRanOut();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval !== null) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+}
+
+function timeRanOut() {
+    mazeComplete = true;
+    mazeFinish.style.display = "flex";
+    finishTitle.textContent = "⏰ TIME'S UP!";
+    finishMessage.textContent =
+        "Try again! Collect the pumpkins and find the exit before time runs out.";
+    mazeFinishButton.textContent = "Retry Level " + currentLevel;
+}
+
+/* CANVAS SIZING */
+
+function resizeMazeCanvas() {
+    const rect = mazeCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const ratio = window.devicePixelRatio || 1;
+
+    mazeCanvas.width = Math.round(rect.width * ratio);
+    mazeCanvas.height = Math.round(rect.height * ratio);
+
+    mazeContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    drawMaze();
+}
+
+window.addEventListener("resize", () => {
+    if (mazeScreen.classList.contains("active")) resizeMazeCanvas();
+    resizeConfettiCanvas();
+});
+
+/* DRAW MAZE */
+
+function drawMaze() {
+    if (!maze.length) return;
+
+    const width = mazeCanvas.clientWidth;
+    const height = mazeCanvas.clientHeight;
+
+    if (!width || !height) return;
+
+    mazeContext.clearRect(0, 0, width, height);
+
+    const cellSize = Math.min(width / mazeSize, height / mazeSize);
+    const offsetX = (width - cellSize * mazeSize) / 2;
+    const offsetY = (height - cellSize * mazeSize) / 2;
+
+    mazeContext.fillStyle = "#151019";
+    mazeContext.fillRect(0, 0, width, height);
+
+    for (let y = 0; y < mazeSize; y++) {
+        for (let x = 0; x < mazeSize; x++) {
+            mazeContext.fillStyle =
+                maze[y][x] === 1 ? "#17121c" : "#493455";
+
+            mazeContext.fillRect(
+                offsetX + x * cellSize,
+                offsetY + y * cellSize,
+                Math.ceil(cellSize),
+                Math.ceil(cellSize)
+            );
+        }
+    }
+
+    /* Start */
+    mazeContext.fillStyle = "#20e85b";
+    mazeContext.fillRect(
+        offsetX + cellSize,
+        offsetY + cellSize,
+        cellSize,
+        cellSize
+    );
+
+    /* Pumpkins */
+    pumpkins.forEach(pumpkin => {
+        if (pumpkin.collected) return;
+
+        drawCellEmoji(
+            "🎃", pumpkin.x, pumpkin.y, cellSize, offsetX, offsetY
+        );
+    });
+
+    /* Key */
+    if (needsKeyAndGate(currentLevel) && !skeletonKey.collected) {
+        drawCellEmoji(
+            "🔑", skeletonKey.x, skeletonKey.y, cellSize, offsetX, offsetY
+        );
+    }
+
+    /*
+       GATE APPEARANCE:
+       Before the key: red locked door.
+       After the key: green unlocked door immediately.
+    */
+    if (needsKeyAndGate(currentLevel)) {
+        if (!skeletonKey.collected) {
+            mazeContext.fillStyle = "#c51f32";
+
+            mazeContext.fillRect(
+                offsetX + gate.x * cellSize,
+                offsetY + gate.y * cellSize,
+                cellSize,
+                cellSize
+            );
+
+            drawCellEmoji(
+                "🔒", gate.x, gate.y, cellSize, offsetX, offsetY
+            );
+        } else {
+            mazeContext.fillStyle = "#16c75a";
+
+            mazeContext.fillRect(
+                offsetX + gate.x * cellSize,
+                offsetY + gate.y * cellSize,
+                cellSize,
+                cellSize
+            );
+
+            drawCellEmoji(
+                "🚪", gate.x, gate.y, cellSize, offsetX, offsetY
+            );
+
+            /* Green border makes the unlocked state easier to see. */
+            mazeContext.strokeStyle = "#aaffbf";
+            mazeContext.lineWidth = Math.max(1, cellSize * 0.12);
+
+            mazeContext.strokeRect(
+                offsetX + gate.x * cellSize + 1,
+                offsetY + gate.y * cellSize + 1,
+                cellSize - 2,
+                cellSize - 2
+            );
+        }
+    }
+
+    /* Exit: hide it on key levels until the player has the key. */
+    if (!needsKeyAndGate(currentLevel) || skeletonKey.collected) {
+        mazeContext.fillStyle = "#ffdf39";
+
+        mazeContext.fillRect(
+            offsetX + exit.x * cellSize,
+            offsetY + exit.y * cellSize,
+            cellSize,
+            cellSize
+        );
+
+        drawCellEmoji(
+            "🚪", exit.x, exit.y, cellSize, offsetX, offsetY
+        );
+    }
+
+    /* Player */
+    mazeContext.fillStyle = "#53caff";
+    mazeContext.beginPath();
+
+    mazeContext.arc(
+        offsetX + (player.x + 0.5) * cellSize,
+        offsetY + (player.y + 0.5) * cellSize,
+        Math.max(2, cellSize * 0.36),
+        0,
+        Math.PI * 2
+    );
+
+    mazeContext.fill();
+    mazeContext.strokeStyle = "#ffffff";
+    mazeContext.lineWidth = Math.max(1, cellSize * 0.08);
+    mazeContext.stroke();
+}
+
+function drawCellEmoji(emoji, x, y, cellSize, offsetX, offsetY) {
+    if (cellSize < 7) return;
+
+    mazeContext.font = Math.max(7, cellSize * 0.8) + "px Arial";
+    mazeContext.textAlign = "center";
+    mazeContext.textBaseline = "middle";
+
+    mazeContext.fillText(
+        emoji,
+        offsetX + (x + 0.5) * cellSize,
+        offsetY + (y + 0.52) * cellSize
+    );
+}
+
+/* PLAYER MOVEMENT */
+
+document.addEventListener("keydown", event => {
+    if (!mazeScreen.classList.contains("active")) return;
+    if (mazeComplete) return;
+
+    const movement = {
+        ArrowUp: [0, -1],
+        ArrowRight: [1, 0],
+        ArrowDown: [0, 1],
+        ArrowLeft: [-1, 0]
+    };
+
+    if (!movement[event.key]) return;
+
+    event.preventDefault();
+
+    const [dx, dy] = movement[event.key];
+    movePlayer(dx, dy);
+});
+
+function movePlayer(dx, dy) {
+    const nx = player.x + dx;
+    const ny = player.y + dy;
+
+    if (nx < 0 || nx >= mazeSize || ny < 0 || ny >= mazeSize) return;
+    if (maze[ny][nx] === 1) return;
+
+    const keyLevel = needsKeyAndGate(currentLevel);
+
+    /* Prevent crossing the gate until the key has been collected. */
+    if (
+        keyLevel &&
+        nx === gate.x &&
+        ny === gate.y &&
+        !skeletonKey.collected
+    ) {
+        mazeStatus.textContent =
+            "🔒 The door is locked! Find the skeleton key first!";
+        return;
+    }
+
+    player.x = nx;
+    player.y = ny;
+
+    collectPumpkinAt(nx, ny);
+
+    if (
+        keyLevel &&
+        player.x === skeletonKey.x &&
+        player.y === skeletonKey.y &&
+        !skeletonKey.collected
+    ) {
+        skeletonKey.collected = true;
+
+        mazeStatus.textContent =
+            "🔑 Key collected! The door is now green and unlocked!";
+
+        /* Redraw immediately so the door turns green right away. */
+        drawMaze();
+        return;
+    }
+
+    if (
+        keyLevel &&
+        player.x === gate.x &&
+        player.y === gate.y &&
+        skeletonKey.collected
+    ) {
+        gate.open = true;
+        mazeStatus.textContent = "🟢 Door unlocked! Find the exit!";
+    }
+
+    drawMaze();
+
+    if (player.x === exit.x && player.y === exit.y) {
+        checkLevelCompletion();
+    }
+}
+
+/* CHECK WIN CONDITIONS */
+
+function checkLevelCompletion() {
+    if (pumpkinsCollected < pumpkinsNeeded) {
+        mazeStatus.textContent =
+            "You still need " +
+            (pumpkinsNeeded - pumpkinsCollected) +
+            " more pumpkin(s)!";
+        return;
+    }
+
+    if (needsKeyAndGate(currentLevel) && !skeletonKey.collected) {
+        mazeStatus.textContent = "Find the skeleton key first!";
+        return;
+    }
+
+    if (needsKeyAndGate(currentLevel) && !gate.open) {
+        mazeStatus.textContent = "Go through the green unlocked door!";
+        return;
+    }
+
+    finishMazeLevel();
+}
+
+function finishMazeLevel() {
+    mazeComplete = true;
+    stopTimer();
+    launchConfetti();
+
+    mazeFinish.style.display = "flex";
+
+    if (currentLevel < 20) {
+        finishTitle.textContent = "🎉 YOU ESCAPED! 🎉";
+        finishMessage.textContent =
+            "Great job! You completed Level " + currentLevel + "!";
+        mazeFinishButton.textContent = "Go to Level " + (currentLevel + 1);
+    } else {
+        finishTitle.textContent = "🏆 YOU BEAT ALL 20 LEVELS! 🏆";
+        finishMessage.textContent = "You are a Halloween Maze Master!";
+        mazeFinishButton.textContent = "Back to Alphabet Game";
+    }
+}
+
+mazeFinishButton.addEventListener("click", () => {
+    if (finishTitle.textContent === "⏰ TIME'S UP!") {
+        startMazeLevel(currentLevel);
+        return;
+    }
+
+    if (currentLevel < 20 && mazeComplete) {
+        startMazeLevel(currentLevel + 1);
+    } else if (currentLevel === 20 && mazeComplete) {
+        stopTimer();
+        mazeScreen.classList.remove("active");
+        alphabetScreen.classList.add("active");
+        mazeFinish.style.display = "none";
+    }
+});
+
+document.getElementById("backButton").addEventListener("click", () => {
+    stopTimer();
+    mazeScreen.classList.remove("active");
+    alphabetScreen.classList.add("active");
+    mazeFinish.style.display = "none";
+});
+
+/* TEST BOX: maze1 through maze20 */
+
+document.getElementById("mazeTestBox").addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+
+    const command = event.target.value.trim().toLowerCase();
+    const match = command.match(/^maze(20|1[0-9]|[1-9])$/);
+
+    if (match) {
+        if (!mazeScreen.classList.contains("active")) openMaze();
+        startMazeLevel(Number(match[1]));
+    }
+
+    event.target.value = "";
+});
+
+/* CONFETTI */
+
+let confettiPieces = [];
+let confettiRunning = false;
+
+function resizeConfettiCanvas() {
+    const ratio = window.devicePixelRatio || 1;
+
+    confettiCanvas.width = Math.round(window.innerWidth * ratio);
+    confettiCanvas.height = Math.round(window.innerHeight * ratio);
+
+    confettiContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+
+function launchConfetti() {
+    resizeConfettiCanvas();
+    confettiPieces = [];
+
+    for (let i = 0; i < 130; i++) {
+        confettiPieces.push({
+            x: Math.random() * window.innerWidth,
+            y: -Math.random() * window.innerHeight,
+            size: 4 + Math.random() * 7,
+            speed: 2 + Math.random() * 5,
+            drift: -2 + Math.random() * 4,
+            rotation: Math.random() * 360,
+            spin: -5 + Math.random() * 10,
+            color: [
+                "#ff4d4d", "#ff9d00", "#ffe36e",
+                "#56ed82", "#63caff", "#d7a0ff"
+            ][Math.floor(Math.random() * 6)]
+        });
+    }
+
+    if (!confettiRunning) {
+        confettiRunning = true;
+        animateConfetti();
+    }
+}
+
+function animateConfetti() {
+    confettiContext.clearRect(
+        0, 0, window.innerWidth, window.innerHeight
+    );
+
+    confettiPieces.forEach(piece => {
+        piece.x += piece.drift;
+        piece.y += piece.speed;
+        piece.rotation += piece.spin;
+
+        confettiContext.save();
+        confettiContext.translate(piece.x, piece.y);
+        confettiContext.rotate(piece.rotation * Math.PI / 180);
+        confettiContext.fillStyle = piece.color;
+
+        confettiContext.fillRect(
+            -piece.size / 2,
+            -piece.size / 2,
+            piece.size,
+            piece.size * 0.65
+        );
+
+        confettiContext.restore();
+    });
+
+    confettiPieces = confettiPieces.filter(
+        piece => piece.y < window.innerHeight + 20
+    );
+
+    if (confettiPieces.length > 0) {
+        requestAnimationFrame(animateConfetti);
+    } else {
+        confettiRunning = false;
+
+        confettiContext.clearRect(
+            0, 0, window.innerWidth, window.innerHeight
+        );
+    }
+}
+
+/* INITIALIZE */
+
+resizeConfettiCanvas();
+createAlphabetBoard();
+</script>
+
+</body>
+</html>
